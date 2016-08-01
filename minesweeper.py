@@ -134,3 +134,11 @@ class MinesweeperState(ahorn.GameBase.State):
 
         new_state.configuration = solution
         return new_state
+
+    def get_actor(self):
+        """Return the player"""
+        return self.player
+
+    def get_players(self):
+        """Return all players, only one in the case of minesweeper"""
+        return [self.player]

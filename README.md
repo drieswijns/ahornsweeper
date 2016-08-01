@@ -241,7 +241,7 @@ bomb-configuration that is possible given the bomb-free cells that have been dis
 by the player.
 
 **But** it will always return the same bomb-configuration. And remember, we needed to
-get __all__ configurations, so we will have to make an slight adjustment to the **get_random**
+get __all__ configurations, so we will have to make another slight adjustment to the **get_random**
 method.
 
 Add this to **MinesweeperState**'s __init__:
@@ -291,3 +291,14 @@ Once pulp has found all solutions, return None
 
 And there we have it. For any possible board discovered by the player, ahorn can use
 the **get_random** method to find all possible bomb configurations.
+
+To finalize the **MinesweeperState** there are a few other easy bookkeeping methods required by ahorn.
+
+    (continued)
+    def get_actor(self):
+        """Return the player"""
+        return self.player
+
+    def get_players(self):
+        """Return all players, only one in the case of minesweeper"""
+        return [self.player]
