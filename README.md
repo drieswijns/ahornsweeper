@@ -96,8 +96,9 @@ The second step is to describe the state of the game:
 
             # make a matrix for the bomb grid
             self.configuration = [  # True if bomb, false if bomb-free
-                [False] * grid_width
-            ] * grid_height
+                [False for _ in range(grid_width)]
+                for __ in range(grid_height)
+            ]
 
             # place the bombs randomly on the grid
             positions = [[i, j] for i in range(grid_height) for j in range(grid_width)]
@@ -106,13 +107,14 @@ The second step is to describe the state of the game:
 
             # make a matrix for to store what the player has discovered
             self.discovered = [  # None if no information is known, otherwise an int counting the neighboring bombs
-                [None] * grid_width
-            ] * grid.height
+                [None for _ in range(grid_width)]
+                for __ in range(grid_height)
+            ]
 
         def str(self, player):
             """Return a string representation of the state, showing only information known to the player."""
             return "\n".join([
-                " ".join([str(number) for number in row])
+                " ".join([str(number) if number is not None else "?" for number in row])
                 for row in self.discovered
             ])
 
@@ -292,7 +294,7 @@ Once pulp has found all solutions, return None
 And there you have it. For any possible board discovered by the player, ahorn can use
 the **get_random** method to find all possible bomb configurations.
 
-To finalize the **MinesweeperState** there are two bookkeeping methods required by ahorn.
+To finalize the **MinesweeperState** there are three bookkeeping methods required by ahorn.
 
     (continued)
     def get_actor(self):
@@ -302,6 +304,18 @@ To finalize the **MinesweeperState** there are two bookkeeping methods required 
     def get_players(self):
         """Return all players, only one in the case of minesweeper"""
         return [self.player]
+
+    def copy(self, other):
+          """Deep copy the contents of the other State to self"""
+          self.configuration = [
+              [is_bomb for is_bomb in row]
+              for row in other.configuration
+          ]
+
+          self.discovered = [
+              [count for count in row]
+              for row in other.discovered
+          ]
 
 You have now completed the **MinesweeperState**, it includes the bomb configuration,
 the information found by the player, the game's stop conditions (**is_final**), the game's
@@ -361,7 +375,7 @@ As you can see, the **execute** method does two things:
 The *State* and the *Actions* are now completely defined. You only need a way to link them, which you will do in the next chapter.
 
 ### Linking **State** and **Actions**
-Ahorn knows which actions are possible by calling the **get_legal_actions** method of the **State** object.
+Ahorn knows which actions are possible in a given state by calling the **get_legal_actions** method.
 The possible actions in minesweeper are easy: the player can mark any previously unmarked cell as bomb-free.
 The cell might explode, or it might not, but trying it out is always a legal action.
 

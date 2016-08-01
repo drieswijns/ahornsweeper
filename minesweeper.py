@@ -1,4 +1,5 @@
 import random
+import pulp
 import ahorn, ahorn.GameBase.State, ahorn.GameBase.Action
 
 grid_width, grid_height = 4, 4  # the size of the grid
@@ -39,7 +40,7 @@ class MarkBombFree(ahorn.GameBase.Action):
         return state
 
     def __str__(self):
-        return "Mark safe in ({}, {})".format(self.i, self.j)
+        return "Mark bomb-free in ({}, {})".format(self.x, self.y)
 
 
 class MinesweeperState(ahorn.GameBase.State):
@@ -48,25 +49,27 @@ class MinesweeperState(ahorn.GameBase.State):
 
         # make a matrix for the bomb grid
         self.configuration = [  # True if bomb, false if bomb-free
-            [False] * grid_width
-        ] * grid_height
+            [False for _ in range(grid_width)]
+            for __ in range(grid_height)
+        ]
 
         # place the bombs randomly on the grid
         positions = [[i, j] for i in range(grid_height) for j in range(grid_width)]
         for x, y in random.sample(positions, n_bombs):
-            self.configuration[x][u] = True
+            self.configuration[x][y] = True
 
         # make a matrix for to store what the player has discovered
         self.discovered = [  # None if no information is known, otherwise an int counting the neighboring bombs
-            [None] * grid_width
-        ] * grid.height
+            [None for _ in range(grid_width)]
+            for __ in range(grid_height)
+        ]
 
         self.prob = None  # Store the LP problem for successive runs of the get_random method
 
     def str(self, player):
         """Return a string representation of the state, showing only information known to the player."""
         return "\n".join([
-            " ".join([str(number) for number in row])
+            " ".join([str(number) if number is not None else "?" for number in row])
             for row in self.discovered
         ])
 
@@ -135,7 +138,7 @@ class MinesweeperState(ahorn.GameBase.State):
 
             # add constraints based on the maximum number of mines around cells marked as bomb-free
             for x, y in positions:
-                count = new_state.discovered[i][j]
+                count = new_state.discovered[x][y]
                 if count is None:  # cell has not been marked as bomb-free
                     continue  # skip
                 neighbors = [
@@ -154,7 +157,7 @@ class MinesweeperState(ahorn.GameBase.State):
         # now pulp can solve it
         self.prob.solve()
 
-        if not pulp.LpStatus[prob.status] == "Optimal":
+        if not pulp.LpStatus[self.prob.status] == "Optimal":
             # We have found all solutions
             return None
 
@@ -168,7 +171,7 @@ class MinesweeperState(ahorn.GameBase.State):
             self.prob.mines[i][j]
             for i, j in positions
             if solution[i][j]
-        ]) <= self.n_bombs - 1
+        ]) <= n_bombs - 1
 
         new_state.configuration = solution
         return new_state
@@ -181,11 +184,34 @@ class MinesweeperState(ahorn.GameBase.State):
         """Return all players, only one in the case of minesweeper"""
         return [self.player]
 
+    def copy(self, other):
+        """Deep copy the contents of the other State to self"""
+        self.configuration = [
+            [is_bomb for is_bomb in row]
+            for row in other.configuration
+        ]
+
+        self.discovered = [
+            [count for count in row]
+            for row in other.discovered
+        ]
+
     def get_legal_actions(self, actor):
         """The player can mark all previously unmarked cells as bomb-free"""
         actions = []
         positions = [[i, j] for i in range(grid_height) for j in range(grid_width)]
         for x, y in positions:
-            if self.counts[x][y] is None:
+            if self.discovered[x][y] is None:
                 actions.append(MarkBombFree(x, y))
         return actions
+
+
+if __name__ == "__main__":
+    import ahorn.Actors
+    player = ahorn.Actors.RandomPlayer()
+    initial_state = MinesweeperState(player)
+    controller = ahorn.Controller(
+        initial_state,
+        verbose=True
+    )
+    controller.play()
