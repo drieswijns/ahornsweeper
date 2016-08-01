@@ -348,7 +348,7 @@ You need to tell ahorn how an action influences a state. This is done by impleme
         bombs_around = sum([
             1
             for nx, ny in neighbors
-            if state.discovered[nx][ny]
+            if state.configuration[nx][ny]
         ])
         state.discovered[self.x][self.y] = bombs_around
         return state
