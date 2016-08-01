@@ -52,3 +52,13 @@ class MinesweeperState(ahorn.GameBase.State):
 
         # in all other cases, the game isn't over yet
         return False
+
+    def get_utility(self, player):
+        """Return -1 when a bomb has exploded, +1 otherwise."""
+        positions = [[i, j] for i in range(grid_height) for j in range(grid_width)]
+        for x, y in positions:
+            is_marked_bomb_free = self.discovered[x][y] is not None
+            is_bomb = self.configuration[x][y]
+            if is_bomb and is_marked_bomb_free:
+                return -1  # the player marked a cell as bomb-free, but there was a bomb
+        return +1

@@ -102,7 +102,7 @@ The second step is to describe the state of the game:
             # place the bombs randomly on the grid
             positions = [[i, j] for i in range(grid_height) for j in range(grid_width)]
             for x, y in random.sample(positions, n_bombs):
-                self.configuration[x][u] = True
+                self.configuration[x][y] = True
 
             # make a matrix for to store what the player has discovered
             self.discovered = [  # None if no information is known, otherwise an int counting the neighboring bombs
@@ -117,13 +117,13 @@ The second step is to describe the state of the game:
             ])
 
 
-You know have a place to store the location of the bombs, and the cells marked as bomb-free by the player.
+You now have a place to store the location of the bombs, and the cells marked as bomb-free by the player.
+You also created a string representation of all the information the players knows about the state.
 
 The next thing ahorn needs to know is when the game is finished. Ahorn does this by calling the **is_final** method
-of the state.
+on the state.
 
-    ...
-
+    (continued)
     def is_final(self):
         """Return True if the game is over, False if the game is not over."""
         # Any bombs exploded?
@@ -151,3 +151,18 @@ We see in the code above that there are only two conditions where the game can b
 
 1. a bomb exploded, or
 2. all safe cells have been found
+
+At the end of the game, ahorn needs to assign a score to the player. A typical scoring
+scheme is $+1$ when the player has won, and $-1$ when the player has lost, i.e. a bomb exploded.
+In ahorn the scoring is done in the **get_utility** method.
+
+    (continued)
+    def get_utility(self, player):
+        """Return -1 when a bomb has exploded, +1 otherwise."""
+        positions = [[i, j] for i in range(grid_height) for j in range(grid_width)]
+        for x, y in positions:
+            is_marked_bomb_free = self.discovered[x][y] is not None
+            is_bomb = self.configuration[x][y]
+            if is_bomb and is_marked_bomb_free:
+                return -1  # the player marked a cell as bomb-free, but there was a bomb
+        return +1
