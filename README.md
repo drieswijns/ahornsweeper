@@ -210,7 +210,7 @@ information available to the player.
 
         # add constraints based on the maximum number of mines around cells marked as bomb-free
         for x, y in positions:
-            count = new_state.discovered[i][j]
+            count = new_state.discovered[x][y]
             if count is None:  # cell has not been marked as bomb-free
                 continue  # skip
             neighbors = [
@@ -220,7 +220,7 @@ information available to the player.
                 if not (dx == 0 and dy == 0)
             ]
             prob += pulp.lpSum([
-                prob.mines[ni][nj]
+                prob.mines[nx][ny]
                 for nx, ny
                 in neighbors
             ]) == count
@@ -234,3 +234,55 @@ information available to the player.
         ]
         new_state.configuration = solution
         return new_state
+
+And there we have it. The **get_random** method will return a new state, with a
+bomb-configuration that is possible given the bomb-free cells that have been discovered
+by the player.
+
+**But** it will always return the same bomb-configuration. And remember, we needed to
+get __all__ configurations, so we will have to make an slight adjustment to the **get_random**
+method.
+
+Add this to **MinesweeperState**'s __init__:
+
+    def __init__(self, player):
+        # ...
+        self.prob = None  # Store the LP problem for successive runs of the get_random method
+
+Make **get_random** use the stored problem if possible:
+
+    def get_random(self, player):
+      # ...
+      if not self.prob:
+          self.prob = pulp.LpProblem("MineSweeper", pulp.LpMinimize)
+
+After pulp has found a solution, make sure it will not return the same solution again
+
+    def get_random(self, player):
+        # ...
+        self.prob.solve()
+        solution = [
+            [bool(pulp.value(self.prob.mines[i][j])) for j in range(grid_width)]
+            for i in range(grid_height)
+        ]
+
+        # make sure pulp doesn't return the same solution again
+        self.prob += pulp.lpSum([
+            self.prob.mines[i][j]
+            for i, j in self.iter_board_indices()
+            if solution[i][j]
+        ]) <= self.n_bombs - 1
+        # ...
+
+Once pulp has found all solutions, return None
+
+    def get_random(self, player):
+      # ...
+      self.prob.solve()
+      if not pulp.LpStatus[prob.status] == "Optimal":
+          # We have found all solutions
+          return None
+      # ...
+
+And there we have it. For any possible board discovered by the player, ahorn can use
+the **get_random** method to find all possible bomb configurations.

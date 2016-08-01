@@ -23,6 +23,8 @@ class MinesweeperState(ahorn.GameBase.State):
             [None] * grid_width
         ] * grid.height
 
+        self.prob = None  # Store the LP problem for successive runs of the get_random method
+
     def str(self, player):
         """Return a string representation of the state, showing only information known to the player."""
         return "\n".join([
@@ -75,46 +77,60 @@ class MinesweeperState(ahorn.GameBase.State):
         # use that matrix to find a possible bomb configuration
         # create a new problem in pulp
         # for more information check out the pulp documentation
-        prob = pulp.LpProblem("MineSweeper", pulp.LpMinimize)
-        prob.mines = pulp.LpVariable.dicts(
-            "Mine",
-            (range(grid_height),range(grid_width)),
-            0,1,
-            pulp.LpInteger
-        )
-        prob += 0  # Arbitrary objective function, we are only looking at constraints
+        if not self.prob:
+            self.prob = pulp.LpProblem("MineSweeper", pulp.LpMinimize)
+            self.prob.mines = pulp.LpVariable.dicts(
+                "Mine",
+                (range(grid_height),range(grid_width)),
+                0,1,
+                pulp.LpInteger
+            )
+            self.prob += 0  # Arbitrary objective function, we are only looking at constraints
 
-        # add a maximum number of mines
-        positions = [[i, j] for i in range(grid_height) for j in range(grid_width)]
-        prob += pulp.lpSum([
-            prob.mines[x][y]
-            for x, y
-            in positions
-        ]) == n_bombs
+            # add a maximum number of mines
+            positions = [[i, j] for i in range(grid_height) for j in range(grid_width)]
+            self.prob += pulp.lpSum([
+                self.prob.mines[x][y]
+                for x, y
+                in positions
+            ]) == n_bombs
 
-        # add constraints based on the maximum number of mines around cells marked as bomb-free
-        for x, y in positions:
-            count = new_state.discovered[i][j]
-            if count is None:  # cell has not been marked as bomb-free
-                continue  # skip
-            neighbors = [
-                [x+dx, y+dy]
-                for dx in [-1, 0, 1]
-                for dy in [-1, 0, 1]
-                if not (dx == 0 and dy == 0)
-            ]
-            prob += pulp.lpSum([
-                prob.mines[ni][nj]
-                for nx, ny
-                in neighbors
-            ]) == count
+            # add constraints based on the maximum number of mines around cells marked as bomb-free
+            for x, y in positions:
+                count = new_state.discovered[i][j]
+                if count is None:  # cell has not been marked as bomb-free
+                    continue  # skip
+                neighbors = [
+                    [x+dx, y+dy]
+                    for dx in [-1, 0, 1]
+                    for dy in [-1, 0, 1]
+                    if not (dx == 0 and dy == 0)
+                ]
+                self.prob += pulp.lpSum([
+                    self.prob.mines[ni][nj]
+                    for nx, ny
+                    in neighbors
+                ]) == count
 
         # the problem has been described, including all constraints
         # now pulp can solve it
-        prob.solve()
+        self.prob.solve()
+
+        if not pulp.LpStatus[prob.status] == "Optimal":
+            # We have found all solutions
+            return None
+
         solution = [
-            [bool(pulp.value(prob.mines[i][j])) for j in range(grid_width)]
+            [bool(pulp.value(self.prob.mines[i][j])) for j in range(grid_width)]
             for i in range(grid_height)
         ]
+
+        # make sure pulp doesn't return the same solution again
+        self.prob += pulp.lpSum([
+            self.prob.mines[i][j]
+            for i, j in self.iter_board_indices()
+            if solution[i][j]
+        ]) <= self.n_bombs - 1
+
         new_state.configuration = solution
         return new_state
