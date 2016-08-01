@@ -29,3 +29,26 @@ class MinesweeperState(ahorn.GameBase.State):
             " ".join([str(number) for number in row])
             for row in self.discovered
         ])
+
+    def is_final(self):
+        """Return True if the game is over, False if the game is not over."""
+        # Any bombs exploded?
+        positions = [[i, j] for i in range(grid_height) for j in range(grid_width)]
+        for x, y in positions:
+            is_marked_bomb_free = self.discovered[x][y] is not None
+            is_bomb = self.configuration[x][y]
+            if is_bomb and is_marked_bomb_free:
+                return True  # the player marked a cell as bomb-free, but there was a bomb
+
+        # Did the player mark all bomb free places ?
+        n_marked_bomb_free = 0
+        for x, y in positions:
+            is_marked_bomb_free = self.discovered[x][y] is not None
+            if is_marked_bomb_free:
+                n_marked_bomb_free += 1
+        n_bomb_free = (grid_width*grid_height) - n_bombs
+        if n_marked_bomb_free == n_bomb_free:
+            return True  # the player has found all bomb-free cells
+
+        # in all other cases, the game isn't over yet
+        return False
