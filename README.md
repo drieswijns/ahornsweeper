@@ -179,6 +179,7 @@ Install pulp
 In ahorn the **get_random** method must return a possible game state, based on the
 information available to the player.
 
+    (continued)
     def get_random(self, player):
         """Return a possible bomb configuration, based on the information available to the player"""
         new_state = MinesweeperState(self.player)
@@ -245,12 +246,14 @@ method.
 
 Add this to **MinesweeperState**'s __init__:
 
+    (continued)
     def __init__(self, player):
         # ...
         self.prob = None  # Store the LP problem for successive runs of the get_random method
 
 Make **get_random** use the stored problem if possible:
 
+    (continued)
     def get_random(self, player):
       # ...
       if not self.prob:
@@ -258,6 +261,7 @@ Make **get_random** use the stored problem if possible:
 
 After pulp has found a solution, make sure it will not return the same solution again
 
+    (continued)
     def get_random(self, player):
         # ...
         self.prob.solve()
@@ -276,6 +280,7 @@ After pulp has found a solution, make sure it will not return the same solution 
 
 Once pulp has found all solutions, return None
 
+    (continued)
     def get_random(self, player):
       # ...
       self.prob.solve()
