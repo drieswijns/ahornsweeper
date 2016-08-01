@@ -33,8 +33,8 @@ Let's say you are presented with the following situation:
     1 · ·
     1 · ·
 
-And additionally, you know that there is **only one bomb** in the grid. The cell
-in the left upper corner is flanked by one bomb, and the center cell is it's
+And additionally, you know that there is **only one bomb** in the grid. As the cell
+in the left upper corner is flanked by only one bomb, and the center cell is it's
 only unknown neighbor, the bomb must be located in that center cell.
 
     1 1 1
@@ -59,7 +59,7 @@ In this situation you'll need to make a guess. The two rightmost cells in the ce
 rows have an equal probability of being bomb-free. Even when you play this game
 perfectly, you'll only have a 50% chance of winning.
 
-Automating this taught process will go as follows:   
+Automating this taught process:   
 * Look at the possible bomb configurations
 * For each cell, compute the probability of it being bomb-free
 * Mark the cell with the highest probability as bomb-free
@@ -183,6 +183,7 @@ information available to the player.
     def get_random(self, player):
         """Return a possible bomb configuration, based on the information available to the player"""
         new_state = MinesweeperState(self.player)
+        positions = [[i, j] for i in range(grid_height) for j in range(grid_width)]
         # copy the matrix containing the cells marked as safe
         new_state.discovered = [
             [number for number in row]
@@ -202,7 +203,6 @@ information available to the player.
         prob += 0  # Arbitrary objective function, we are only looking at constraints
 
         # add a maximum number of mines
-        positions = [[i, j] for i in range(grid_height) for j in range(grid_width)]
         prob += pulp.lpSum([
             prob.mines[x][y]
             for x, y
@@ -273,7 +273,7 @@ After pulp has found a solution, make sure it will not return the same solution 
         # make sure pulp doesn't return the same solution again
         self.prob += pulp.lpSum([
             self.prob.mines[i][j]
-            for i, j in self.iter_board_indices()
+            for i, j in positions
             if solution[i][j]
         ]) <= self.n_bombs - 1
         # ...
