@@ -18,7 +18,7 @@ class MarkBombFree(ahorn.GameBase.Action):
         """This action will modify a state.
 
         Return the modified state."""
-        # Is there a bomb in the place we want to mark as safe?
+        # Is there a bomb in the cell we want to mark as safe?
         is_bomb = state.configuration[self.x][self.y]
         if is_bomb:
             state.discovered[self.x][self.y] = "☆"  # BOOM, player exploded a bomb
@@ -29,7 +29,11 @@ class MarkBombFree(ahorn.GameBase.Action):
             [self.x+dx, self.y+dy]
             for dx in [-1, 0, 1]
             for dy in [-1, 0, 1]
-            if not (dx == 0 and dy == 0)
+            if (
+                not (dx == 0 and dy == 0)
+                and (self.x+dx > 0 and self.x+dx < grid_width)
+                and (self.y+dy > 0 and self.y+dy < grid_height)
+            )
         ]
         bombs_around = sum([
             1
@@ -145,7 +149,11 @@ class MinesweeperState(ahorn.GameBase.State):
                     [x+dx, y+dy]
                     for dx in [-1, 0, 1]
                     for dy in [-1, 0, 1]
-                    if not (dx == 0 and dy == 0)
+                    if (
+                        not (dx == 0 and dy == 0)
+                        and (x+dx > 0 and x+dx < grid_width)
+                        and (y+dy > 0 and y+dy < grid_height)
+                    )
                 ]
                 self.prob += pulp.lpSum([
                     self.prob.mines[ni][nj]

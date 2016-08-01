@@ -220,7 +220,11 @@ information available to the player.
                 [x+dx, y+dy]
                 for dx in [-1, 0, 1]
                 for dy in [-1, 0, 1]
-                if not (dx == 0 and dy == 0)
+                if (
+                    not (dx == 0 and dy == 0)
+                    and (x+dx > 0 and x+dx < grid_width)
+                    and (y+dy > 0 and y+dy < grid_height)
+                )
             ]
             prob += pulp.lpSum([
                 prob.mines[nx][ny]
@@ -357,7 +361,11 @@ You need to tell ahorn how an action influences a state. This is done by impleme
             [self.x+dx, self.y+dy]
             for dx in [-1, 0, 1]
             for dy in [-1, 0, 1]
-            if not (dx == 0 and dy == 0)
+            if (
+                not (dx == 0 and dy == 0)
+                and (self.x+dx > 0 and self.x+dx < grid_width)
+                and (self.y+dy > 0 and self.y+dy < grid_height)
+            )
         ]
         bombs_around = sum([
             1
