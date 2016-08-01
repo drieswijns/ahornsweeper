@@ -1,7 +1,7 @@
 Ahornsweeper
 ============
 
-In this tutorial you will create a automated minesweeper player.
+In this tutorial you will create an automated minesweeper player.
 This is an introduction to game playing AI and the ahorn framework.
 
 Minesweeper
@@ -19,7 +19,7 @@ After marking a spot as bomb-free, you'll discover more of the grid.
 
 ![Grid in minesweeper](/resources/remaining.png)
 
-The numbers in the grind represent the number of bombs around that number.
+A number in a cell represent the number of bombs around that cell.
 The goal of the game is to discover all bomb-free cells.
 
 In the next chapter you will look at a general algorithm to solve this game.
@@ -81,6 +81,7 @@ Start by installing ahorn:
 
     pip install ahorn
 
+### State
 The second step is to describe the state of the game:
 
     import random
