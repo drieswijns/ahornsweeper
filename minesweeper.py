@@ -18,6 +18,9 @@ class MarkBombFree(ahorn.GameBase.Action):
         """This action will modify a state.
 
         Return the modified state."""
+        if state.discovered[self.x][self.y] is not None:
+            return state
+
         # Is there a bomb in the cell we want to mark as safe?
         is_bomb = state.configuration[self.x][self.y]
         if is_bomb:
@@ -31,8 +34,8 @@ class MarkBombFree(ahorn.GameBase.Action):
             for dy in [-1, 0, 1]
             if (
                 not (dx == 0 and dy == 0)
-                and (self.x+dx > 0 and self.x+dx < grid_width)
-                and (self.y+dy > 0 and self.y+dy < grid_height)
+                and (self.x+dx >= 0 and self.x+dx < grid_height)
+                and (self.y+dy >= 0 and self.y+dy < grid_width)
             )
         ]
         bombs_around = sum([
@@ -41,6 +44,10 @@ class MarkBombFree(ahorn.GameBase.Action):
             if state.configuration[nx][ny]
         ])
         state.discovered[self.x][self.y] = bombs_around
+        if bombs_around == 0:
+            for nx, ny in neighbors:
+                state = MarkBombFree(nx, ny).execute(state)
+
         return state
 
     def __str__(self):
@@ -151,12 +158,12 @@ class MinesweeperState(ahorn.GameBase.State):
                     for dy in [-1, 0, 1]
                     if (
                         not (dx == 0 and dy == 0)
-                        and (x+dx > 0 and x+dx < grid_width)
-                        and (y+dy > 0 and y+dy < grid_height)
+                        and (x+dx >= 0 and x+dx < grid_height)
+                        and (y+dy >= 0 and y+dy < grid_width)
                     )
                 ]
                 self.prob += pulp.lpSum([
-                    self.prob.mines[ni][nj]
+                    self.prob.mines[nx][ny]
                     for nx, ny
                     in neighbors
                 ]) == count
@@ -166,8 +173,9 @@ class MinesweeperState(ahorn.GameBase.State):
         self.prob.solve()
 
         if not pulp.LpStatus[self.prob.status] == "Optimal":
-            # We have found all solutions
-            return None
+            # We have found all solutions, restart
+            self.prob = None
+            return self.get_random(player)
 
         solution = [
             [bool(pulp.value(self.prob.mines[i][j])) for j in range(grid_width)]
@@ -214,9 +222,30 @@ class MinesweeperState(ahorn.GameBase.State):
         return actions
 
 
+class MinesweeperPlayer(ahorn.GameBase.Player):
+    def __init__(self):
+        pass
+
+    def get_action(self, state):
+        simulations_per_action = 15
+        legal_actions = state.get_legal_actions(self)
+        points = {
+            action: 0
+            for action in legal_actions
+        }
+
+        for action in legal_actions:
+            for _ in range(simulations_per_action):
+                possible_state = state.get_random(self)
+                possible_state = action.execute(possible_state)
+                points[action] += possible_state.get_utility(self)
+
+        best_action = max(points.items(), key=lambda action_points: action_points[1])[0]
+
+        return best_action
+
 if __name__ == "__main__":
-    import ahorn.Actors
-    player = ahorn.Actors.RandomPlayer()
+    player = MinesweeperPlayer()
 
     n_games = 100
     points = 0
@@ -228,6 +257,7 @@ if __name__ == "__main__":
         )
         final_state = controller.play()
         points += final_state.get_utility(player)
+        print("\r{}".format(points/(_+1)))
 
     print("Games played: {}".format(n_games))
     print("Total points: {}".format(points))

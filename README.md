@@ -1,6 +1,7 @@
 Ahornsweeper
 ============
 
+# ** WORK IN PROGRESS ** 
 In this tutorial you will create an automated minesweeper player.
 This is an introduction to game playing AI and the ahorn framework.
 
@@ -222,12 +223,12 @@ information available to the player.
                 for dy in [-1, 0, 1]
                 if (
                     not (dx == 0 and dy == 0)
-                    and (x+dx > 0 and x+dx < grid_width)
-                    and (y+dy > 0 and y+dy < grid_height)
+                    and (x+dx >= 0 and x+dx < grid_height)
+                    and (y+dy >= 0 and y+dy < grid_width)
                 )
             ]
-            prob += pulp.lpSum([
-                prob.mines[nx][ny]
+            self.prob += pulp.lpSum([
+                self.prob.mines[nx][ny]
                 for nx, ny
                 in neighbors
             ]) == count
@@ -284,15 +285,17 @@ After pulp has found a solution, make sure it will not return the same solution 
         ]) <= self.n_bombs - 1
         # ...
 
-Once pulp has found all solutions, return None
+Once pulp has found all solutions, return from the beginning
 
     (continued)
     def get_random(self, player):
       # ...
       self.prob.solve()
-      if not pulp.LpStatus[prob.status] == "Optimal":
-          # We have found all solutions
-          return None
+      if not pulp.LpStatus[self.prob.status] == "Optimal":
+          # We have found all solutions, restart
+          self.prob = None
+          return self.get_random(player)
+
       # ...
 
 And there you have it. For any possible board discovered by the player, ahorn can use
@@ -363,8 +366,8 @@ You need to tell ahorn how an action influences a state. This is done by impleme
             for dy in [-1, 0, 1]
             if (
                 not (dx == 0 and dy == 0)
-                and (self.x+dx > 0 and self.x+dx < grid_width)
-                and (self.y+dy > 0 and self.y+dy < grid_height)
+                and (self.x+dx >= 0 and self.x+dx < grid_height)
+                and (self.y+dy >= 0 and self.y+dy < grid_width)
             )
         ]
         bombs_around = sum([
@@ -394,7 +397,7 @@ The cell might explode, or it might not, but trying it out is always a legal act
               actions = []
               positions = [[i, j] for i in range(grid_height) for j in range(grid_width)]
               for x, y in positions:
-                  if self.counts[x][y] is None:
+                  if self.discovered[x][y] is None:
                       actions.append(MarkBombFree(x, y))
               return actions
 
@@ -436,7 +439,7 @@ If you put this at the bottom of your file, and execute it, you might get an out
     ? ? ? ?
     Points: -1
 
-Quite a disappointing result. The player chooses quite clearly very bad actions. Let's
+Quite a disappointing result. The player chooses very bad actions. Let's
 quantify just how disappointing the **RandomPlayer** player is.
 
 Replace the script by:
@@ -467,4 +470,23 @@ You will most probably get the following result:
     Total points: -100
     Average points: -1.0
 
-The random player loses all the games he plays!
+The random player lost all the games! Looks like randomly clicking on cells
+isn't a very good strategy. Let's see if you can do better. In the next chapter
+you will be creating your own **Player** which (hopefully) plays better than the **RandomPlayer**
+
+Player
+------
+
+You will be implementing the algorithm discussed in the first chapter as a **Player** in ahorn.
+
+Start by subclassing **ahorn.Actors.Player***:
+
+    import ahorn.Actors
+
+    class MinesweeperPlayer(ahorn.Actors.Player):
+        def get_action(self, state):
+            # ...
+            return action
+
+A player only needs one method: **get_action**. Based on the state that is passed to that method,
+the actor returns the best action he thinks he should take in that situation.
