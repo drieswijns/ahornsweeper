@@ -361,3 +361,22 @@ As you can see, the **execute** method does two things:
 The *State* and the *Actions* are now completely defined. You only need a way to link them, which you will do in the next chapter.
 
 ### Linking **State** and **Actions**
+Ahorn knows which actions are possible by calling the **get_legal_actions** method of the **State** object.
+The possible actions in minesweeper are easy: the player can mark any previously unmarked cell as bomb-free.
+The cell might explode, or it might not, but trying it out is always a legal action.
+
+    class MinesweeperState(ahorn.GameBase.State):
+        # ...
+        def get_legal_actions(self, actor):
+              """The player can mark all previously unmarked cells as bomb-free"""
+              actions = []
+              positions = [[i, j] for i in range(grid_height) for j in range(grid_width)]
+              for x, y in positions:
+                  if self.counts[x][y] is None:
+                      actions.append(MarkBombFree(x, y))
+              return actions
+
+Playing your first game
+-----------------------
+
+We've reached our first milestone.

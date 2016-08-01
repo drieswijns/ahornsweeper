@@ -180,3 +180,12 @@ class MinesweeperState(ahorn.GameBase.State):
     def get_players(self):
         """Return all players, only one in the case of minesweeper"""
         return [self.player]
+
+    def get_legal_actions(self, actor):
+        """The player can mark all previously unmarked cells as bomb-free"""
+        actions = []
+        positions = [[i, j] for i in range(grid_height) for j in range(grid_width)]
+        for x, y in positions:
+            if self.counts[x][y] is None:
+                actions.append(MarkBombFree(x, y))
+        return actions
