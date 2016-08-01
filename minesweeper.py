@@ -1,8 +1,40 @@
 import random
-import ahorn, ahorn.GameBase.State
+import ahorn, ahorn.GameBase.State, ahorn.GameBase.Action
 
 grid_width, grid_height = 4, 4  # the size of the grid
 n_bombs = 5  # how many bombs
+
+
+class MarkBombFree(ahorn.GameBase.Action):
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __str__(self):
+        return "Mark bomb-free in ({}, {})".format(self.x, self.y)
+
+    def execute(self, state):
+        state.alive += self.alive
+        is_bomb = state.board[self.i][self.j] == symbols["bomb"]
+        if is_bomb:
+            state.alive -= 1
+            state.counts[self.i][self.j] = symbols["bomb"]
+            return state
+
+        bombs_around = sum([
+            1
+            for ni, nj in state.iter_neighbours_indices(self.i, self.j)
+            if state.board[ni][nj] == symbols["bomb"]
+        ])
+        state.counts[self.i][self.j] = bombs_around
+        if bombs_around == 0:
+            for ni, nj in state.iter_neighbours_indices(self.i, self.j):
+                if state.counts[ni][nj] == symbols["unknown"]:
+                    state = MarkEmpty(ni, nj).execute(state)
+        return state
+
+    def __str__(self):
+        return "Mark safe in ({}, {})".format(self.i, self.j)
 
 class MinesweeperState(ahorn.GameBase.State):
     def __init__(self, player):

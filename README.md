@@ -168,7 +168,7 @@ In ahorn the scoring is done in the **get_utility** method.
         return +1
 
 Now comes the difficult part, in the previous chapter we discussed the general algorithm
-for solving the grid. The algorithm required us to find the bomb configurations that are possible
+for solving the grid. The algorithm required you to find the bomb configurations that are possible
 based on the information the player has gained about the board. This problem can be expressed
 as a linear program, and we'll use the python module **pulp** to solve it.
 
@@ -236,12 +236,12 @@ information available to the player.
         new_state.configuration = solution
         return new_state
 
-And there we have it. The **get_random** method will return a new state, with a
+And there you have it. The **get_random** method will return a new state, with a
 bomb-configuration that is possible given the bomb-free cells that have been discovered
 by the player.
 
-**But** it will always return the same bomb-configuration. And remember, we needed to
-get __all__ configurations, so we will have to make another slight adjustment to the **get_random**
+**But** it will always return the same bomb-configuration. And remember, you needed to
+get __all__ configurations, so you will have to make another slight adjustment to the **get_random**
 method.
 
 Add this to **MinesweeperState**'s __init__:
@@ -289,7 +289,7 @@ Once pulp has found all solutions, return None
           return None
       # ...
 
-And there we have it. For any possible board discovered by the player, ahorn can use
+And there you have it. For any possible board discovered by the player, ahorn can use
 the **get_random** method to find all possible bomb configurations.
 
 To finalize the **MinesweeperState** there are two bookkeeping methods required by ahorn.
@@ -302,3 +302,25 @@ To finalize the **MinesweeperState** there are two bookkeeping methods required 
     def get_players(self):
         """Return all players, only one in the case of minesweeper"""
         return [self.player]
+
+You have now completed the **MinesweeperState**, it includes the bomb configuration,
+the information found by the player, the game's stop conditions (**is_final**), the game's
+scoring mechanism (**get_utility**), and a way to translate the information the players has
+to possible bomb configurations (**get_random**).
+
+The **State** was the first part of the game description. You will create the second part, the **Actions**,
+in the next section.
+
+### Action
+
+In minesweeper, there is only one action available to the player: mark a cell as safe.
+
+Start by subclassing **ahorn.GameBase.Action**:
+
+    class MarkBombFree(ahorn.GameBase.Action):
+        def __init__(self, x, y):
+            self.x = x  # cell row
+            self.y = y  # cell column
+
+        def __str__(self):
+            return "Mark bomb-free in ({}, {})".format(self.x, self.y)
