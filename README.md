@@ -22,6 +22,8 @@ After marking a spot as bomb-free, you'll discover more of the grid.
 The numbers in the grind represent the number of bombs around that number.
 The goal of the game is to discover all bomb-free cells.
 
+In the next chapter you will look at a general algorithm to solve this game.
+
 Automating Minesweeper
 ----------------------
 
@@ -63,3 +65,39 @@ Automating this taught process will go as follows:
 * Mark the cell with the highest probability as bomb-free
 
 Repeat until all bomb-free cells are found.
+
+In the next chapter you will learn how to describe minesweeper in the ahorn framework.
+
+Describing minesweeper in ahorn
+-------------------------------
+
+We first need to describe the rules of minesweeper to ahorn. Ahorn splits a game
+into two parts:
+
+  1. **State**: this is the bomb configuration, and stores the cells that are marked as bomb-free
+  2. **Action**: minesweeper contains only one action: *mark cell as safe*
+
+Start by installing ahorn:
+
+    pip install ahorn
+
+The second step is to describe the state of the game:
+
+    class MinesweeperState(ahorn.GameBase.State):
+        def __init__(self, player):
+            self.player = player  # the player that will solve the game, you will create him later
+
+            # make a matrix for the bomb grid
+            self.configuration = [  # True if bomb, false if bomb-free
+                [False] * grid_width
+            ] * grid_height
+
+            # place the bombs randomly on the grid
+            indices = [[i, j] for i in range(grid_height) for j in range(grid_width)]
+            for x, y in random.sample(indices, 4):
+                self.configuration[x][u] = True
+
+            # make a matrix for to store what the player has discovered
+            self.discovered = [  # None if no information is known, otherwise an int counting the neighboring bombs
+                [None] * grid_width
+            ] * grid.height
