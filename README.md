@@ -401,4 +401,70 @@ The cell might explode, or it might not, but trying it out is always a legal act
 Playing your first game
 -----------------------
 
-We've reached our first milestone.
+You've reached our first milestone! You've taught ahorn how to play minesweeper.
+
+    if __name__ == "__main__":
+        import ahorn.Actors
+        player = ahorn.Actors.RandomPlayer()
+        initial_state = MinesweeperState(player)
+        controller = ahorn.Controller(
+            initial_state,
+            verbose=True  # print to screen
+        )
+        controller.play()
+
+If you put this at the bottom of your file, and execute it, you might get an output like this:
+
+    (venv)john@doe:~$ python minesweeper.py
+    ? ? ? ?
+    ? ? ? ?
+    ? ? ? ?
+    Mark bomb-free in (2, 0)
+    ? ? ? ?
+    ? ? ? ?
+    0 ? ? ?
+    ? ? ? ?
+    Mark bomb-free in (2, 2)
+    ? ? ? ?
+    ? ? ? ?
+    0 ? 3 ?
+    ? ? ? ?
+    Mark bomb-free in (2, 3)
+    ? ? ? ?
+    ? ? ? ?
+    0 ? 3 ☆
+    ? ? ? ?
+    Points: -1
+
+Quite a disappointing result. The player chooses quite clearly very bad actions. Let's
+quantify just how disappointing the **RandomPlayer** player is.
+
+Replace the script by:
+
+    if __name__ == "__main__":
+        import ahorn.Actors
+        player = ahorn.Actors.RandomPlayer()
+
+        n_games = 100
+        points = 0
+        for _ in range(n_games):
+            initial_state = MinesweeperState(player)
+            controller = ahorn.Controller(
+                initial_state,
+                verbose=False
+            )
+            final_state = controller.play()
+            points += final_state.get_utility(player)
+
+        print("Games played: {}".format(n_games))
+        print("Total points: {}".format(points))
+        print("Average points: {}".format(points/n_games))
+
+You will most probably get the following result:
+
+    (venv) john@doe:~$ python minesweeper.py
+    Games played: 100
+    Total points: -100
+    Average points: -1.0
+
+The random player loses all the games he plays!

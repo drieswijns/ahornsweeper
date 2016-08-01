@@ -217,9 +217,18 @@ class MinesweeperState(ahorn.GameBase.State):
 if __name__ == "__main__":
     import ahorn.Actors
     player = ahorn.Actors.RandomPlayer()
-    initial_state = MinesweeperState(player)
-    controller = ahorn.Controller(
-        initial_state,
-        verbose=True
-    )
-    controller.play()
+
+    n_games = 100
+    points = 0
+    for _ in range(n_games):
+        initial_state = MinesweeperState(player)
+        controller = ahorn.Controller(
+            initial_state,
+            verbose=False
+        )
+        final_state = controller.play()
+        points += final_state.get_utility(player)
+
+    print("Games played: {}".format(n_games))
+    print("Total points: {}".format(points))
+    print("Average points: {}".format(points/n_games))
