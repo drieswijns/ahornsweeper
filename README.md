@@ -292,7 +292,7 @@ Once pulp has found all solutions, return None
 And there we have it. For any possible board discovered by the player, ahorn can use
 the **get_random** method to find all possible bomb configurations.
 
-To finalize the **MinesweeperState** there are a few other easy bookkeeping methods required by ahorn.
+To finalize the **MinesweeperState** there are two bookkeeping methods required by ahorn.
 
     (continued)
     def get_actor(self):
