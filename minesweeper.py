@@ -14,27 +14,33 @@ class MarkBombFree(ahorn.GameBase.Action):
         return "Mark bomb-free in ({}, {})".format(self.x, self.y)
 
     def execute(self, state):
-        state.alive += self.alive
-        is_bomb = state.board[self.i][self.j] == symbols["bomb"]
+        """This action will modify a state.
+
+        Return the modified state."""
+        # Is there a bomb in the place we want to mark as safe?
+        is_bomb = state.configuration[self.x][self.y]
         if is_bomb:
-            state.alive -= 1
-            state.counts[self.i][self.j] = symbols["bomb"]
+            state.discovered[self.x][self.y] = "☆"  # BOOM, player exploded a bomb
             return state
 
+        # There was no bomb, we need to find the number of bombs in this cell's neighborhood
+        neighbors = [
+            [self.x+dx, self.y+dy]
+            for dx in [-1, 0, 1]
+            for dy in [-1, 0, 1]
+            if not (dx == 0 and dy == 0)
+        ]
         bombs_around = sum([
             1
-            for ni, nj in state.iter_neighbours_indices(self.i, self.j)
-            if state.board[ni][nj] == symbols["bomb"]
+            for nx, ny in neighbors
+            if state.discovered[nx][ny]
         ])
-        state.counts[self.i][self.j] = bombs_around
-        if bombs_around == 0:
-            for ni, nj in state.iter_neighbours_indices(self.i, self.j):
-                if state.counts[ni][nj] == symbols["unknown"]:
-                    state = MarkEmpty(ni, nj).execute(state)
+        state.discovered[self.x][self.y] = bombs_around
         return state
 
     def __str__(self):
         return "Mark safe in ({}, {})".format(self.i, self.j)
+
 
 class MinesweeperState(ahorn.GameBase.State):
     def __init__(self, player):

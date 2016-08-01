@@ -311,7 +311,7 @@ to possible bomb configurations (**get_random**).
 The **State** was the first part of the game description. You will create the second part, the **Actions**,
 in the next section.
 
-### Action
+### Actions
 
 In minesweeper, there is only one action available to the player: mark a cell as safe.
 
@@ -324,3 +324,40 @@ Start by subclassing **ahorn.GameBase.Action**:
 
         def __str__(self):
             return "Mark bomb-free in ({}, {})".format(self.x, self.y)
+
+You need to tell ahorn how an action influences a state. This is done by implementing the **execute** method.
+
+    (continued)
+    def execute(self, state):
+        """This action will modify a state.
+
+        Return the modified state."""
+        # Is there a bomb in the place we want to mark as safe?
+        is_bomb = state.configuration[self.x][self.y]
+        if is_bomb:
+            state.discovered[self.x][self.y] = "☆"  # BOOM, player exploded a bomb
+            return state
+
+        # There was no bomb, we need to find the number of bombs in this cell's neighborhood
+        neighbors = [
+            [self.x+dx, self.y+dy]
+            for dx in [-1, 0, 1]
+            for dy in [-1, 0, 1]
+            if not (dx == 0 and dy == 0)
+        ]
+        bombs_around = sum([
+            1
+            for nx, ny in neighbors
+            if state.discovered[nx][ny]
+        ])
+        state.discovered[self.x][self.y] = bombs_around
+        return state
+
+As you can see, the **execute** method does two things:
+
+1. If there is a bomb in the cell the players wants to mark as bomb-free, it will explode
+2. Else, it will count the number of neighboring bombs, and put the count in the cell
+
+The *State* and the *Actions* are now completely defined. You only need a way to link them, which you will do in the next chapter.
+
+### Linking **State** and **Actions**
