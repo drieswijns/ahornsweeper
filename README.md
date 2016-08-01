@@ -12,9 +12,11 @@ Minesweeper is a single player game where you need to find all safe
 spots in a grid filled with bombs.
 
 Initially, the grid is completely unknown.
+
 ![Unknown grid in minesweeper](/resources/empty.png)
 
 After marking a spot as safe, you'll discover more of the grid.
+
 ![Grid in minesweeper](/resources/remaining.png)
 
 The numbers in the grind represent the number of bombs around that number.
