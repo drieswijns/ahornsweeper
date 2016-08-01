@@ -62,3 +62,59 @@ class MinesweeperState(ahorn.GameBase.State):
             if is_bomb and is_marked_bomb_free:
                 return -1  # the player marked a cell as bomb-free, but there was a bomb
         return +1
+
+    def get_random(self, player):
+        """Return a possible bomb configuration, based on the information available to the player"""
+        new_state = MinesweeperState(self.player)
+        # copy the matrix containing the cells marked as safe
+        new_state.discovered = [
+            [number for number in row]
+            for row in self.discovered
+        ]
+
+        # use that matrix to find a possible bomb configuration
+        # create a new problem in pulp
+        # for more information check out the pulp documentation
+        prob = pulp.LpProblem("MineSweeper", pulp.LpMinimize)
+        prob.mines = pulp.LpVariable.dicts(
+            "Mine",
+            (range(grid_height),range(grid_width)),
+            0,1,
+            pulp.LpInteger
+        )
+        prob += 0  # Arbitrary objective function, we are only looking at constraints
+
+        # add a maximum number of mines
+        positions = [[i, j] for i in range(grid_height) for j in range(grid_width)]
+        prob += pulp.lpSum([
+            prob.mines[x][y]
+            for x, y
+            in positions
+        ]) == n_bombs
+
+        # add constraints based on the maximum number of mines around cells marked as bomb-free
+        for x, y in positions:
+            count = new_state.discovered[i][j]
+            if count is None:  # cell has not been marked as bomb-free
+                continue  # skip
+            neighbors = [
+                [x+dx, y+dy]
+                for dx in [-1, 0, 1]
+                for dy in [-1, 0, 1]
+                if not (dx == 0 and dy == 0)
+            ]
+            prob += pulp.lpSum([
+                prob.mines[ni][nj]
+                for nx, ny
+                in neighbors
+            ]) == count
+
+        # the problem has been described, including all constraints
+        # now pulp can solve it
+        prob.solve()
+        solution = [
+            [bool(pulp.value(prob.mines[i][j])) for j in range(grid_width)]
+            for i in range(grid_height)
+        ]
+        new_state.configuration = solution
+        return new_state
