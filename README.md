@@ -99,11 +99,21 @@ The second step is to describe the state of the game:
             ] * grid_height
 
             # place the bombs randomly on the grid
-            indices = [[i, j] for i in range(grid_height) for j in range(grid_width)]
-            for x, y in random.sample(indices, n_bombs):
+            positions = [[i, j] for i in range(grid_height) for j in range(grid_width)]
+            for x, y in random.sample(positions, n_bombs):
                 self.configuration[x][u] = True
 
             # make a matrix for to store what the player has discovered
             self.discovered = [  # None if no information is known, otherwise an int counting the neighboring bombs
                 [None] * grid_width
             ] * grid.height
+
+        def str(self, player):
+            """Return a string representation of the state, showing only information known to the player."""
+            return "\n".join([
+                " ".join([str(number) for number in row])
+                for row in self.discovered
+            ])
+
+
+You know have a place to store the location of the bombs, cells marked as bomb-free by the player.
