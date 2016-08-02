@@ -413,7 +413,7 @@ The cell might explode, or it might not, but trying it out is always a legal act
 Playing your first game
 -----------------------
 
-You've reached our first milestone! You've taught ahorn how to play minesweeper.
+You've reached your first milestone! You've taught ahorn how to play minesweeper.
 
     if __name__ == "__main__":
         import ahorn.Actors
