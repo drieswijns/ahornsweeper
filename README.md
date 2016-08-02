@@ -92,8 +92,8 @@ The second step is to describe the state of the game:
     n_bombs = 5  # how many bombs
 
     class MinesweeperState(ahorn.GameBase.State):
-        def __init__(self, player):
-            self.player = player  # the player that will solve the game, you will create him later
+        def __init__(self, players):
+            self.player = player[0]  # the player that will solve the game, you will create him later
 
             # make a matrix for the bomb grid
             self.configuration = [  # True if bomb, false if bomb-free
@@ -187,7 +187,7 @@ are possible given the player's information are called the **information set**. 
     (continued)
     def get_random(self, player):
         """Return a possible bomb configuration, based on the information available to the player"""
-        new_state = MinesweeperState(self.player)
+        new_state = MinesweeperState([self.player])
         positions = [[i, j] for i in range(grid_height) for j in range(grid_width)]
         # copy the matrix containing the cells marked as safe
         new_state.discovered = [
@@ -449,37 +449,30 @@ If you put this at the bottom of your file, and execute it, you might get an out
     Points: -1
 
 Quite a disappointing result. The player chooses very bad actions. Let's
-quantify just how disappointing the **RandomPlayer** player is.
+measure just how disappointing the **RandomPlayer** player is.
 
 Replace the script by:
 
     if __name__ == "__main__":
-        import ahorn.Actors
+        import ahorn.Arena, ahorn.Actors
         player = ahorn.Actors.RandomPlayer()
-
-        n_games = 100
-        points = 0
-        for _ in range(n_games):
-            initial_state = MinesweeperState(player)
-            controller = ahorn.Controller(
-                initial_state,
-                verbose=False
-            )
-            final_state = controller.play()
-            points += final_state.get_utility(player)
-
-        print("Games played: {}".format(n_games))
-        print("Total points: {}".format(points))
-        print("Average points: {}".format(points/n_games))
+        arena = ahorn.Arena.Arena(
+            MinesweeperState,
+            [player],
+            verbose=True
+        )
+        arena.play()
 
 You will most probably get the following result:
 
     (venv) john@doe:~$ python minesweeper.py
-    Games played: 100
-    Total points: -100
-    Average points: -1.0
+    <class '__main__.MinesweeperState'>
+    Game 50 out of 50 in 1.2s (0.0s per game)
+    =========================
+    RandomPlayer	|	-1.000/-0.960/-0.880
 
-The random player lost all the games! Looks like randomly clicking on cells
+
+The random player, winning on average -0.960 points, lost almost the games! Looks like randomly clicking on cells
 isn't a very good strategy. Let's see if you can do better. In the next chapter
 you will be creating your own **Player** which (hopefully) plays better than the **RandomPlayer**
 
@@ -533,18 +526,19 @@ few are representable for the entire set.
 When you let **MinesweeperPlayer** play a couple of games, you'll get a result similar to
 
     (venv) john@doe:~$ python minesweeper.py
-    Games played: 100
-    Total points: -50
-    Average points: -0.5
+    <class '__main__.MinesweeperState'>
+    Game 50 out of 50 in 1015.4s (20.3s per game)
+    =========================
+    MinesweeperPlayer	|	-0.720/-0.520/-0.320
 
-Which is slightly better than the random player.
+
+Which is better than the random player.
 
 ## Conclusions
 You've added a new game, minesweeper, to ahorn and you've created your first player.
 You now know how ahorn works, and can start creating your own AI.
 
-Here are a couple ideas for your future AI
-
+Here are a couple ideas for further AI development
 
 2. [multi-armed bandid strategies](https://en.wikipedia.org/wiki/Multi-armed_bandit)
 3. [Q-learning](https://en.wikipedia.org/wiki/Q-learning)

@@ -55,8 +55,8 @@ class MarkBombFree(ahorn.GameBase.Action):
 
 
 class MinesweeperState(ahorn.GameBase.State):
-    def __init__(self, player):
-        self.player = player  # the player that will solve the game, you will create him later
+    def __init__(self, players):
+        self.player = players[0]  # the player that will solve the game, you will create him later
 
         # make a matrix for the bomb grid
         self.configuration = [  # True if bomb, false if bomb-free
@@ -119,7 +119,7 @@ class MinesweeperState(ahorn.GameBase.State):
 
     def get_random(self, player):
         """Return a possible bomb configuration, based on the information available to the player"""
-        new_state = MinesweeperState(self.player)
+        new_state = MinesweeperState([self.player])
         positions = [[i, j] for i in range(grid_height) for j in range(grid_width)]
         # copy the matrix containing the cells marked as safe
         new_state.discovered = [
@@ -244,21 +244,15 @@ class MinesweeperPlayer(ahorn.GameBase.Player):
 
         return best_action
 
+    def __str__(self):
+        return "MinesweeperPlayer"
+
 if __name__ == "__main__":
+    import ahorn.Arena, ahorn.Actors
     player = MinesweeperPlayer()
-
-    n_games = 100
-    points = 0
-    for _ in range(n_games):
-        initial_state = MinesweeperState(player)
-        controller = ahorn.Controller(
-            initial_state,
-            verbose=False
-        )
-        final_state = controller.play()
-        points += final_state.get_utility(player)
-        print("\r{}".format(points/(_+1)))
-
-    print("Games played: {}".format(n_games))
-    print("Total points: {}".format(points))
-    print("Average points: {}".format(points/n_games))
+    arena = ahorn.Arena.Arena(
+        MinesweeperState,
+        [player, ],
+        verbose=True
+    )
+    arena.play()
