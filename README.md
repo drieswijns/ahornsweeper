@@ -544,6 +544,8 @@ You've added a new game, minesweeper, to ahorn and you've created your first pla
 You now know how ahorn works, and can start creating your own AI.
 
 Here are a couple ideas for your future AI
+
+
 2. [multi-armed bandid strategies](https://en.wikipedia.org/wiki/Multi-armed_bandit)
 3. [Q-learning](https://en.wikipedia.org/wiki/Q-learning)
 4. multi-player games, with or without adversaries
