@@ -1,13 +1,13 @@
 Ahornsweeper
 ============
 
-# ** WORK IN PROGRESS ** 
-In this tutorial you will create an automated minesweeper player.
-This is an introduction to game playing AI and the ahorn framework.
+In this 1 hour tutorial you will create an automated minesweeper player.
+This is an introduction to game playing AI and the ahorn framework, and assumes
+you already know how to program in python.
 
 Minesweeper
 -----------
-*(Feel free to skip this if you already know the rules of minesweeper)*
+*(Feel free to skip this chapter if you already know the rules of minesweeper)*
 
 Minesweeper is a single player game where you need to find all bomb-free
 cells in a grid filled with bombs.
@@ -180,7 +180,9 @@ Install pulp
     pip install pulp
 
 In ahorn the **get_random** method must return a possible game state, based on the
-information available to the player.
+information available to the player. In technical terms, all the possible states that
+are possible given the player's information are called the **information set**. With the
+**get_random** method, a player can **sample from the information set**.
 
     (continued)
     def get_random(self, player):
@@ -243,12 +245,12 @@ information available to the player.
         new_state.configuration = solution
         return new_state
 
-And there you have it. The **get_random** method will return a new state, with a
+The **get_random** method will return a new state, with a
 bomb-configuration that is possible given the bomb-free cells that have been discovered
 by the player.
 
 **But** it will always return the same bomb-configuration. And remember, you needed to
-get __all__ configurations, so you will have to make another slight adjustment to the **get_random**
+sample from __all__ configurations, so you will have to make another slight adjustment to the **get_random**
 method.
 
 Add this to **MinesweeperState**'s __init__:
@@ -313,7 +315,7 @@ To finalize the **MinesweeperState** there are three bookkeeping methods require
         return [self.player]
 
     def copy(self, other):
-          """Deep copy the contents of the other State to self"""
+          """Deep copy the contents of other to self"""
           self.configuration = [
               [is_bomb for is_bomb in row]
               for row in other.configuration
@@ -350,9 +352,11 @@ You need to tell ahorn how an action influences a state. This is done by impleme
 
     (continued)
     def execute(self, state):
-        """This action will modify a state.
+        """This action will modify a the state by adjusting the discovered matrix"""
 
-        Return the modified state."""
+        if state.discovered[self.x][self.y] is not None:
+                return state
+
         # Is there a bomb in the place we want to mark as safe?
         is_bomb = state.configuration[self.x][self.y]
         if is_bomb:
@@ -376,6 +380,11 @@ You need to tell ahorn how an action influences a state. This is done by impleme
             if state.configuration[nx][ny]
         ])
         state.discovered[self.x][self.y] = bombs_around
+
+        # If the neighboring cells are also empty, cascade the discovery
+        if bombs_around == 0:
+                for nx, ny in neighbors:
+                    state = MarkBombFree(nx, ny).execute(state)
         return state
 
 As you can see, the **execute** method does two things:
@@ -484,9 +493,59 @@ Start by subclassing **ahorn.Actors.Player***:
     import ahorn.Actors
 
     class MinesweeperPlayer(ahorn.Actors.Player):
+        def __init__(self):
+            pass
+
         def get_action(self, state):
             # ...
             return action
 
 A player only needs one method: **get_action**. Based on the state that is passed to that method,
 the actor returns the best action he thinks he should take in that situation.
+
+You want the **MinesweeperPlayer** to look at different possible bomb-configurations to
+estimate the probability of a cell being bomb-free. Ideally it would look at all the possible configurations, but that would be too slow.
+Instead, we will make **MinesweeperPlayer** look at only a few, and hope the result of those
+few are representable for the entire set.
+
+    class MinesweeperPlayer(ahorn.GameBase.Player):
+        def __init__(self):
+            pass
+
+        def get_action(self, state):
+            simulations_per_action = 15  # how many configurations to look at for each given action
+            legal_actions = state.get_legal_actions(self)
+            points = {
+                action: 0
+                for action in legal_actions
+            }
+
+            for action in legal_actions:
+                for _ in range(simulations_per_action):
+                    possible_state = state.get_random(self)
+                    possible_state = action.execute(possible_state)
+                    points[action] += possible_state.get_utility(self)
+
+            best_action = max(points.items(), key=lambda action_points: action_points[1])[0]
+
+            return best_action
+
+When you let **MinesweeperPlayer** play a couple of games, you'll get a result similar to
+
+    (venv) john@doe:~$ python minesweeper.py
+    Games played: 100
+    Total points: -50
+    Average points: -0.5
+
+Which is slightly better than the random player.
+
+## Conclusions
+You've added a new game, minesweeper, to ahorn and you've created your first player.
+You now know how ahorn works, and can start creating your own AI.
+
+Here are a couple ideas for your future AI
+2. [multi-armed bandid strategies](https://en.wikipedia.org/wiki/Multi-armed_bandit)
+3. [Q-learning](https://en.wikipedia.org/wiki/Q-learning)
+4. multi-player games, with or without adversaries
+
+Have fun!
